@@ -1,5 +1,5 @@
 import React from 'react';
-import { Agent, AgentCategory, AgentType, MonitoringConfig, ChatbotConfig, ReportingConfig, VentilatorConfig, AgentConfig, KnowledgeSourceType, EMRIntegrationConfig, KnowledgeSource } from './types';
+import { Agent, AgentCategory, AgentType, MonitoringConfig, ChatbotConfig, ReportingConfig, VentilatorConfig, AgentConfig, KnowledgeSourceType, EMRIntegrationConfig, KnowledgeSource, MedicalLiteratureSearchConfig } from './types';
 
 // HeroIcons as React Components
 const ChartBarIcon: React.FC<{ className?: string }> = (props) => (
@@ -32,10 +32,31 @@ const defaultEMRConfig: EMRIntegrationConfig = {
     }
 };
 
+const defaultLiteratureSearchConfig: MedicalLiteratureSearchConfig = {
+    enabled: false,
+    databases: {
+        pubmed: true,
+        medline: false,
+        cochrane: false,
+    },
+    searchScope: 'abstracts',
+    recency: '5y',
+};
+
 export const INITIAL_KNOWLEDGE_SOURCES: KnowledgeSource[] = [
     { id: 'kb-1', name: '병원 프로토콜', type: KnowledgeSourceType.PROTOCOL, description: '본원 입원 환자 대상 프로토콜', enabled: true, isDeletable: false },
     { id: 'kb-2', name: '소아과 가이드라인', type: KnowledgeSourceType.GUIDELINE, description: 'American Academy of Pediatrics, 2023', enabled: true, isDeletable: false },
     { id: 'kb-3', name: '의학 저널', type: KnowledgeSourceType.CUSTOM, description: 'NEJM 구독 피드', enabled: false, isDeletable: true },
+    { id: 'kb-peds-resp-1', name: '소아 급성 호흡곤란 증후군(PARDS) 가이드라인', type: KnowledgeSourceType.GUIDELINE, description: 'PALICC-2, 2023', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-2', name: '기관절개관 관리 프로토콜', type: KnowledgeSourceType.PROTOCOL, description: '서울아산병원 소아청소년과', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-3', name: '소아 천식 흡입기 사용법 교육자료', type: KnowledgeSourceType.RECOMMENDATION, description: '보호자 대상 교육용', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-4', name: '홍길동 소아호흡기학', type: KnowledgeSourceType.TEXTBOOK, description: '제5판, 2024', enabled: false, isDeletable: true },
+    { id: 'kb-peds-resp-5', name: '보호자 대상 RSV 감염 예방 교육자료', type: KnowledgeSourceType.CUSTOM, description: '내부 제작 콘텐츠', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-6', name: '신생아 일과성 빈호흡(TTN) 관리 지침', type: KnowledgeSourceType.GUIDELINE, description: '대한신생아학회', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-7', name: '크룹(Croup) 치료 프로토콜', type: KnowledgeSourceType.PROTOCOL, description: '응급실용', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-8', name: '모세기관지염 치료 권장사항', type: KnowledgeSourceType.RECOMMENDATION, description: 'AAP Clinical Practice Guideline', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-9', name: '소아 만성 기침의 진단 및 치료', type: KnowledgeSourceType.GUIDELINE, description: '대한소아알레르기호흡기학회', enabled: true, isDeletable: true },
+    { id: 'kb-peds-resp-10', name: 'Nelson Textbook of Pediatrics - Respiratory System', type: KnowledgeSourceType.TEXTBOOK, description: '22nd Edition', enabled: true, isDeletable: true },
 ];
 
 
@@ -70,6 +91,7 @@ export const AGENT_TYPE_DETAILS: Record<AgentType, {
             alertProfile: 'standard',
             knowledgeSourceIds: [],
             emrIntegration: { ...defaultEMRConfig, dataPoints: { ...defaultEMRConfig.dataPoints, ventilatorData: true } },
+            literatureSearch: defaultLiteratureSearchConfig,
         } as VentilatorConfig,
         defaultDescription: '가정용 인공호흡기의 주요 지표를 모니터링하여 잠재적인 문제를 조기에 감지합니다.',
     },
@@ -81,6 +103,7 @@ export const AGENT_TYPE_DETAILS: Record<AgentType, {
             persona: 'empathetic',
             knowledgeSourceIds: ['kb-1'],
             rules: [],
+            literatureSearch: { ...defaultLiteratureSearchConfig, enabled: true },
         } as ChatbotConfig,
         defaultDescription: '승인된 지식 소스를 기반으로 보호자의 질문에 답변합니다.',
     },
@@ -93,6 +116,7 @@ export const AGENT_TYPE_DETAILS: Record<AgentType, {
             content: { vitalTrends: true, alertsLog: true, guardianSymptoms: false, medicationAdherence: false },
             format: 'narrative',
             emrIntegration: defaultEMRConfig,
+            literatureSearch: defaultLiteratureSearchConfig,
         } as ReportingConfig,
         defaultDescription: '환자의 상태와 주요 이벤트에 대한 일일 요약을 생성합니다.',
     }
@@ -137,12 +161,22 @@ export const INITIAL_AGENTS: Agent<any>[] = [
       persona: 'empathetic',
       knowledgeSourceIds: ['kb-1', 'kb-2', 'kb-3'],
       rules: [
-        { id: 'rule-1', condition: '만약 보호자가 불안해 보이면', action: '안심시키고 간호사 호출을 제안하세요' },
-        { id: 'rule-2', condition: '만약 특정 수치에 대해 질문하면', action: '정확한 수치와 함께 의미를 쉽게 설명해주세요' },
-        { id: 'rule-3', condition: '만약 "숨쉬기 힘들어해요", "의식이 없어요" 등 긴급 상황 관련 단어가 포함되면', action: '즉시 119에 전화하고 의료진에게 알리도록 안내하세요' },
-        { id: 'rule-4', condition: '만약 약물 부작용에 대해 질문하면', action: '일반적인 정보를 제공하고, 반드시 의사/약사와 상의하도록 강조하세요' },
-        { id: 'rule-5', condition: '만약 질문을 이해하지 못하면', action: '정중하게 다시 질문해달라고 요청하고, 구체적인 예시를 들어주세요' },
+        { id: 'rule-1', condition: '불안, 걱정, 무서워요', matchType: 'any', responses: ['괜찮으신가요? 많이 걱정되시겠어요. 제가 도울 수 있는 일이 있을까요?', '필요하시면 간호사 호출을 도와드릴 수 있습니다.'], escalation: 'none', tags: ['emotional_support', 'caregiver_anxiety'] },
+        { id: 'rule-2', condition: '숨쉬기 힘들어해요, 청색증, 의식이 없어요', matchType: 'any', responses: ['매우 위급한 상황일 수 있습니다. 즉시 119에 신고하고, 동시에 의료진에게 바로 알리겠습니다.'], escalation: 'nurse_alert', tags: ['urgent', 'respiratory_distress', 'emergency'] },
+        { id: 'rule-3', condition: '약, 부작용, 투약', matchType: 'any', responses: ['약물에 대한 질문이시군요. 일반적인 정보는 알려드릴 수 있지만, 가장 정확한 답변을 위해 담당 의사나 약사에게 전달해 드리겠습니다.', '잠시만 기다려주세요.'], escalation: 'doctor_review', tags: ['medication', 'adverse_event_query'] },
+        { id: 'rule-4', condition: '인공호흡기, 알람', matchType: 'all', responses: ['인공호흡기에서 알람이 울리나요? 화면에 표시되는 메시지가 있다면 알려주시겠어요?', '먼저, 아이의 호흡이 괜찮은지 확인해주세요. 연결 튜브가 빠지거나 꼬이지 않았는지도 확인 부탁드립니다.'], escalation: 'none', tags: ['ventilator', 'alarm', 'technical_issue'] },
+        { id: 'rule-5', condition: '모르겠어요, 무슨 말인지', matchType: 'any', responses: ['죄송합니다, 질문을 잘 이해하지 못했어요. 조금 더 쉽게 다른 방식으로 질문해주시겠어요?', '예를 들어, "아이가 열이 나요"와 같이 구체적으로 말씀해주시면 더 좋습니다.'], escalation: 'none', tags: ['clarification', 'nlu_fallback'] },
       ],
+      literatureSearch: {
+          enabled: true,
+          databases: {
+              pubmed: true,
+              medline: true,
+              cochrane: false,
+          },
+          searchScope: 'abstracts',
+          recency: '5y',
+      }
     } as ChatbotConfig,
   },
   {
@@ -171,7 +205,8 @@ export const INITIAL_AGENTS: Agent<any>[] = [
             allergies: true,
             consultationNotes: false,
         }
-      }
+      },
+      literatureSearch: defaultLiteratureSearchConfig,
     } as ReportingConfig,
   },
   {
@@ -200,7 +235,8 @@ export const INITIAL_AGENTS: Agent<any>[] = [
             vitals: true,
             ventilatorData: true,
         }
-      }
+      },
+      literatureSearch: defaultLiteratureSearchConfig,
     } as VentilatorConfig,
   },
 ];

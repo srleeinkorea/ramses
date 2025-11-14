@@ -1,8 +1,9 @@
 import React from 'react';
-import { Agent, ReportingConfig, EMRDataPoints } from '../../types';
+import { Agent, ReportingConfig, EMRDataPoints, MedicalLiteratureSearchConfig } from '../../types';
 import Card from '../common/Card';
 import Select from '../common/Select';
 import ToggleSwitch from '../common/ToggleSwitch';
+import LiteratureSearchConfigCard from '../common/LiteratureSearchConfigCard';
 
 interface ReportingAgentConfigPanelProps {
   agent: Agent<ReportingConfig>;
@@ -65,6 +66,10 @@ const ReportingAgentConfigPanel: React.FC<ReportingAgentConfigPanelProps> = ({ a
         ...currentPoints,
         [point]: !currentPoints[point],
     });
+  };
+
+  const handleLiteratureSearchChange = (literatureSearchConfig: MedicalLiteratureSearchConfig) => {
+    onConfigChange(agent.id, { ...config, literatureSearch: literatureSearchConfig });
   };
 
   return (
@@ -152,6 +157,10 @@ const ReportingAgentConfigPanel: React.FC<ReportingAgentConfigPanelProps> = ({ a
             </div>
         </div>
       </Card>
+      <LiteratureSearchConfigCard
+        config={config.literatureSearch}
+        onConfigChange={handleLiteratureSearchChange}
+      />
     </div>
   );
 };

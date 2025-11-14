@@ -14,7 +14,10 @@ export enum AgentType {
 export interface BehavioralRule {
   id: string;
   condition: string;
-  action: string;
+  matchType: 'any' | 'all';
+  responses: string[];
+  escalation: 'none' | 'nurse_alert' | 'doctor_review';
+  tags?: string[];
 }
 
 export interface EMRDataPoints {
@@ -29,6 +32,17 @@ export interface EMRDataPoints {
 export interface EMRIntegrationConfig {
   enabled: boolean;
   dataPoints: Partial<EMRDataPoints>;
+}
+
+export interface MedicalLiteratureSearchConfig {
+  enabled: boolean;
+  databases: {
+    pubmed: boolean;
+    medline: boolean;
+    cochrane: boolean;
+  };
+  searchScope: 'abstracts' | 'full_text';
+  recency: '1y' | '5y' | 'all';
 }
 
 export interface MonitoringConfig {
@@ -56,6 +70,7 @@ export interface VentilatorConfig {
   alertProfile: 'standard' | 'pediatric' | 'sensitive';
   knowledgeSourceIds: string[];
   emrIntegration: EMRIntegrationConfig;
+  literatureSearch: MedicalLiteratureSearchConfig;
 }
 
 export enum KnowledgeSourceType {
@@ -79,6 +94,7 @@ export interface ChatbotConfig {
   persona: 'clinical' | 'empathetic' | 'direct';
   knowledgeSourceIds: string[];
   rules: BehavioralRule[];
+  literatureSearch: MedicalLiteratureSearchConfig;
 }
 
 export interface ReportingConfig {
@@ -91,6 +107,7 @@ export interface ReportingConfig {
   };
   format: 'bullet' | 'narrative' | 'table';
   emrIntegration: EMRIntegrationConfig;
+  literatureSearch: MedicalLiteratureSearchConfig;
 }
 
 export type AgentConfig = MonitoringConfig | ChatbotConfig | ReportingConfig | VentilatorConfig;

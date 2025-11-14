@@ -1,8 +1,9 @@
 import React from 'react';
-import { Agent, VentilatorConfig, EMRDataPoints, KnowledgeSource, KnowledgeSourceType } from '../../types';
+import { Agent, VentilatorConfig, EMRDataPoints, KnowledgeSource, KnowledgeSourceType, MedicalLiteratureSearchConfig } from '../../types';
 import Card from '../common/Card';
 import Select from '../common/Select';
 import ToggleSwitch from '../common/ToggleSwitch';
+import LiteratureSearchConfigCard from '../common/LiteratureSearchConfigCard';
 
 interface VentilatorAgentConfigPanelProps {
   agent: Agent<VentilatorConfig>;
@@ -81,6 +82,10 @@ const VentilatorAgentConfigPanel: React.FC<VentilatorAgentConfigPanelProps> = ({
         ? currentIds.filter(id => id !== sourceId)
         : [...currentIds, sourceId];
     onConfigChange(agent.id, { ...config, knowledgeSourceIds: newIds });
+  };
+
+  const handleLiteratureSearchChange = (literatureSearchConfig: MedicalLiteratureSearchConfig) => {
+    onConfigChange(agent.id, { ...config, literatureSearch: literatureSearchConfig });
   };
 
 
@@ -169,7 +174,7 @@ const VentilatorAgentConfigPanel: React.FC<VentilatorAgentConfigPanelProps> = ({
           />
         </div>
       </Card>
-       <Card title="참조 지식 기반" description="고급 분류 및 결정 지원을 위해 에이전트가 참조할 지식 소스를 선택하세요.">
+       <Card title="참조 Knowledge DB" description="고급 분류 및 결정 지원을 위해 에이전트가 참조할 지식 소스를 선택하세요.">
         <div className="space-y-2 mt-4">
             {allKnowledgeSources.map(source => {
                 const isSelected = config.knowledgeSourceIds.includes(source.id);
@@ -194,7 +199,7 @@ const VentilatorAgentConfigPanel: React.FC<VentilatorAgentConfigPanelProps> = ({
                                         {source.type}
                                     </span>
                                 </div>
-                                {!isEnabledInKB && <p className="text-xs text-red-500 mt-1">이 소스는 전체 지식 기반에서 비활성화되어 있습니다.</p>}
+                                {!isEnabledInKB && <p className="text-xs text-red-500 mt-1">이 소스는 전체 Knowledge DB에서 비활성화되어 있습니다.</p>}
                             </div>
                         </div>
                     </div>
@@ -241,6 +246,10 @@ const VentilatorAgentConfigPanel: React.FC<VentilatorAgentConfigPanelProps> = ({
             </div>
         </div>
       </Card>
+       <LiteratureSearchConfigCard
+        config={config.literatureSearch}
+        onConfigChange={handleLiteratureSearchChange}
+      />
     </div>
   );
 };

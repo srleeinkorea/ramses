@@ -59,7 +59,7 @@ const KnowledgeBasePanel: React.FC<KnowledgeBasePanelProps> = ({ knowledgeSource
   };
 
   return (
-    <Card title="전체 지식 기반 관리" description="모든 AI 에이전트가 참조할 수 있는 공통 지식 소스를 관리합니다.">
+    <Card title="전체 Knowledge DB 관리" description="모든 AI 에이전트가 참조할 수 있는 공통 지식 소스(Knowledge Source)를 관리합니다.">
         <div className="space-y-2 mt-4">
         {knowledgeSources.map(source => {
             const typeColor = TYPE_COLORS[source.type as KnowledgeSourceType] || TYPE_COLORS[KnowledgeSourceType.CUSTOM];

@@ -11,7 +11,7 @@ const TEMPLATES_STORAGE_KEY = 'ai_agent_templates';
 
 const App: React.FC = () => {
   const [agents, setAgents] = useState<Agent<any>[]>(INITIAL_AGENTS);
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(INITIAL_AGENTS.length > 0 ? INITIAL_AGENTS[0].id : null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(INITIAL_AGENTS.length > 0 ? INITIAL_AGENTS[0].id : 'knowledge-base');
   const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>(INITIAL_KNOWLEDGE_SOURCES);
@@ -27,10 +27,9 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Fix: Added `setSelectedAgentId` to the dependency array. While not strictly necessary as setters are stable, it follows best practices.
-  const handleSelectAgent = useCallback((id: string) => {
-    setSelectedAgentId(id);
-  }, [setSelectedAgentId]);
+  const handleSelectItem = useCallback((id: string) => {
+    setSelectedItemId(id);
+  }, []);
   
   // Fix: Added `setAgents` to the dependency array for useCallback.
   const handleConfigChange = useCallback((agentId: string, newConfig: AgentConfig, newEnabledState?: boolean) => {
@@ -97,9 +96,9 @@ const App: React.FC = () => {
     };
 
     setAgents(prev => [...prev, newAgent]);
-    setSelectedAgentId(newAgent.id);
+    setSelectedItemId(newAgent.id);
     setIsCreateModalOpen(false);
-  }, [setAgents, setSelectedAgentId, setIsCreateModalOpen]);
+  }, [setAgents, setIsCreateModalOpen]);
 
   // Fix: Wrapped handler in useCallback and added dependency.
   const handleUpdateKnowledgeSources = useCallback((newSources: KnowledgeSource[]) => {
@@ -107,15 +106,15 @@ const App: React.FC = () => {
   }, [setKnowledgeSources]);
 
 
-  const selectedAgent = agents.find(agent => agent.id === selectedAgentId);
+  const selectedAgent = agents.find(agent => agent.id === selectedItemId);
 
   return (
     <>
       <div className="flex h-screen bg-gray-100 font-sans">
         <Sidebar
           agents={agents}
-          selectedAgentId={selectedAgentId}
-          onSelectAgent={handleSelectAgent}
+          selectedItemId={selectedItemId}
+          onSelectItem={handleSelectItem}
           onOpenCreateAgentModal={() => setIsCreateModalOpen(true)}
         />
         <main className="flex-1 flex flex-col overflow-hidden">
@@ -127,13 +126,12 @@ const App: React.FC = () => {
             <PatientContext />
           </header>
           <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
-            <KnowledgeBasePanel 
-                knowledgeSources={knowledgeSources}
-                onUpdateKnowledgeSources={handleUpdateKnowledgeSources}
-            />
-            
-            {selectedAgent ? (
-              <div className="mt-6">
+            {selectedItemId === 'knowledge-base' ? (
+                <KnowledgeBasePanel 
+                    knowledgeSources={knowledgeSources}
+                    onUpdateKnowledgeSources={handleUpdateKnowledgeSources}
+                />
+            ) : selectedAgent ? (
                 <AgentConfigPanel
                   key={selectedAgent.id}
                   agent={selectedAgent}
@@ -143,11 +141,10 @@ const App: React.FC = () => {
                   onDeleteTemplate={handleDeleteTemplate}
                   allKnowledgeSources={knowledgeSources}
                 />
-              </div>
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <p className="text-gray-500 text-lg mb-4">설정을 시작하려면 에이전트를 선택하세요.</p>
+                  <p className="text-gray-500 text-lg mb-4">설정을 시작하려면 에이전트를 선택하거나 Knowledge DB를 관리하세요.</p>
                   <button 
                     onClick={() => setIsCreateModalOpen(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105"

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Agent, ChatbotConfig, BehavioralRule, KnowledgeSource, KnowledgeSourceType } from '../../types';
+import { Agent, ChatbotConfig, BehavioralRule, KnowledgeSource, KnowledgeSourceType, MedicalLiteratureSearchConfig } from '../../types';
 import Card from '../common/Card';
 import Select from '../common/Select';
-import ToggleSwitch from '../common/ToggleSwitch';
+import LiteratureSearchConfigCard from '../common/LiteratureSearchConfigCard';
+
 
 interface ChatbotAgentConfigPanelProps {
   agent: Agent<ChatbotConfig>;
@@ -32,20 +33,24 @@ const ChatbotAgentConfigPanel: React.FC<ChatbotAgentConfigPanelProps> = ({ agent
         : [...currentIds, sourceId];
     onConfigChange(agent.id, { ...config, knowledgeSourceIds: newIds });
   };
-
-  const handleRuleChange = (ruleId: string, field: 'condition' | 'action', value: string) => {
-    const newRules = config.rules.map(rule => rule.id === ruleId ? {...rule, [field]: value} : rule);
+  
+  const handleRuleUpdate = (updatedRule: BehavioralRule) => {
+    const newRules = config.rules.map(rule => rule.id === updatedRule.id ? updatedRule : rule);
     onConfigChange(agent.id, { ...config, rules: newRules });
   };
   
   const addRule = () => {
-    const newRule: BehavioralRule = { id: `rule-${Date.now()}`, condition: '', action: '' };
+    const newRule: BehavioralRule = { id: `rule-${Date.now()}`, condition: '', matchType: 'any', responses: [''], escalation: 'none', tags: [] };
     onConfigChange(agent.id, { ...config, rules: [...config.rules, newRule] });
   };
 
   const removeRule = (ruleId: string) => {
     const newRules = config.rules.filter(rule => rule.id !== ruleId);
     onConfigChange(agent.id, { ...config, rules: newRules });
+  };
+  
+  const handleLiteratureSearchChange = (literatureSearchConfig: MedicalLiteratureSearchConfig) => {
+    onConfigChange(agent.id, { ...config, literatureSearch: literatureSearchConfig });
   };
 
   return (
@@ -66,7 +71,7 @@ const ChatbotAgentConfigPanel: React.FC<ChatbotAgentConfigPanelProps> = ({ agent
          </div>
       </Card>
       
-      <Card title="참조 지식 기반" description="챗봇이 답변을 위해 참조할 지식 소스를 선택하세요. 전체 지식 기반은 화면 상단에서 관리할 수 있습니다.">
+      <Card title="참조 Knowledge DB" description="챗봇이 답변을 위해 참조할 지식 소스를 선택하세요. 전체 Knowledge DB는 'Knowledge DB' 메뉴에서 관리할 수 있습니다.">
         <div className="space-y-2 mt-4">
             {allKnowledgeSources.map(source => {
                 const isSelected = config.knowledgeSourceIds.includes(source.id);
@@ -92,7 +97,7 @@ const ChatbotAgentConfigPanel: React.FC<ChatbotAgentConfigPanelProps> = ({ agent
                                     </span>
                                     {source.description && <p className="text-xs text-gray-500 hidden sm:block">{source.description}</p>}
                                 </div>
-                                {!isEnabledInKB && <p className="text-xs text-red-500 mt-1">이 소스는 전체 지식 기반에서 비활성화되어 있습니다.</p>}
+                                {!isEnabledInKB && <p className="text-xs text-red-500 mt-1">이 소스는 전체 Knowledge DB에서 비활성화되어 있습니다.</p>}
                             </div>
                         </div>
                     </div>
@@ -101,35 +106,102 @@ const ChatbotAgentConfigPanel: React.FC<ChatbotAgentConfigPanelProps> = ({ agent
         </div>
       </Card>
 
-      <Card title="행동 규칙" description="'조건-행동' 규칙을 직접 만들어 특정 상황에 대한 챗봇의 응답을 맞춤 설정하세요. 이를 통해 고도로 개인화된 대응이 가능합니다.">
+      <Card title="행동 규칙" description="복잡한 '조건-응답-조치' 규칙을 만들어 특정 상황에 대한 챗봇의 반응을 정교하게 제어하세요. 다단계 대화 흐름과 조건부 시스템 동작을 설정할 수 있습니다.">
         <div className="space-y-4 mt-4">
           {config.rules.map((rule) => (
-            <div key={rule.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+             <div key={rule.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">조건 (IF)</label>
+                  <p className="text-xs text-gray-500 mb-1">사용자 메시지에 다음 키워드 중 하나라도 포함될 경우 규칙이 실행됩니다 (쉼표로 구분).</p>
                   <input
                     type="text"
                     value={rule.condition}
-                    onChange={(e) => handleRuleChange(rule.id, 'condition', e.target.value)}
-                    placeholder="예: 보호자가 SpO2에 대해 질문"
+                    onChange={(e) => handleRuleUpdate({ ...rule, condition: e.target.value })}
+                    placeholder="예: 불안, 걱정, 무서워요"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
+                  <div className="flex items-center space-x-4 mt-2">
+                    <label className="text-xs font-medium text-gray-600">키워드 일치 조건:</label>
+                    <div className="flex items-center">
+                      <input id={`match-any-${rule.id}`} type="radio" value="any" checked={rule.matchType === 'any'} onChange={() => handleRuleUpdate({ ...rule, matchType: 'any' })} className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"/>
+                      <label htmlFor={`match-any-${rule.id}`} className="ml-2 text-xs text-gray-700">하나라도 포함 (OR)</label>
+                    </div>
+                    <div className="flex items-center">
+                      <input id={`match-all-${rule.id}`} type="radio" value="all" checked={rule.matchType === 'all'} onChange={() => handleRuleUpdate({ ...rule, matchType: 'all' })} className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"/>
+                      <label htmlFor={`match-all-${rule.id}`} className="ml-2 text-xs text-gray-700">모두 포함 (AND)</label>
+                    </div>
+                  </div>
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">행동 (THEN)</label>
-                  <input
-                    type="text"
-                    value={rule.action}
-                    onChange={(e) => handleRuleChange(rule.id, 'action', e.target.value)}
-                    placeholder="예: 먼저 쉬운 설명 제공"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">응답 (THEN)</label>
+                  <div className="space-y-2">
+                    {rule.responses.map((response, index) => (
+                        <div key={index} className="flex items-start space-x-2">
+                            <div className="flex-shrink-0 text-xs font-semibold text-gray-500 bg-gray-200 rounded-full h-5 w-5 flex items-center justify-center mt-2">{index + 1}</div>
+                            <textarea
+                                value={response}
+                                onChange={(e) => {
+                                    const newResponses = [...rule.responses];
+                                    newResponses[index] = e.target.value;
+                                    handleRuleUpdate({ ...rule, responses: newResponses });
+                                }}
+                                placeholder={`메시지 #${index + 1}`}
+                                rows={2}
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            />
+                            <button 
+                                onClick={() => {
+                                    if (rule.responses.length > 1) {
+                                        const newResponses = rule.responses.filter((_, i) => i !== index);
+                                        handleRuleUpdate({ ...rule, responses: newResponses });
+                                    }
+                                }} 
+                                disabled={rule.responses.length <= 1}
+                                className="p-1 text-gray-400 rounded-md hover:bg-gray-200 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent mt-1"
+                                aria-label="응답 삭제"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    ))}
+                  </div>
+                   <button onClick={() => handleRuleUpdate({ ...rule, responses: [...rule.responses, ''] })} className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-800">
+                    + 응답 추가
+                   </button>
                 </div>
-              </div>
-               <div className="flex justify-end mt-3">
+
+                <div className="space-y-4">
+                    <Select
+                        label="추가 조치 (ACTION)"
+                        value={rule.escalation}
+                        onChange={(value) => handleRuleUpdate({ ...rule, escalation: value })}
+                        options={[
+                            { value: 'none', label: '없음' },
+                            { value: 'nurse_alert', label: '간호사에게 긴급 알림' },
+                            { value: 'doctor_review', label: '의사 검토 목록에 추가' },
+                        ]}
+                        description="메시지 전송 후 실행할 추가적인 시스템 동작을 선택합니다."
+                    />
+                     <div>
+                        <label htmlFor={`tags-${rule.id}`} className="block text-sm font-medium text-gray-700">대화 태그 (TAGS)</label>
+                        <p className="text-xs text-gray-500 mb-1">분석 및 검토를 위해 대화에 적용할 태그를 입력하세요 (쉼표로 구분).</p>
+                        <input
+                            type="text"
+                            id={`tags-${rule.id}`}
+                            value={rule.tags?.join(', ') || ''}
+                            onChange={(e) => handleRuleUpdate({ ...rule, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                            placeholder="예: emotional_support, technical_issue"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        />
+                    </div>
+                </div>
+
+               <div className="flex justify-end pt-3 mt-2 border-t">
                     <button onClick={() => removeRule(rule.id)} className="text-red-500 hover:text-red-700 text-sm font-medium">
-                        삭제
+                        규칙 삭제
                     </button>
                </div>
             </div>
@@ -139,6 +211,11 @@ const ChatbotAgentConfigPanel: React.FC<ChatbotAgentConfigPanelProps> = ({ agent
           </button>
         </div>
       </Card>
+      
+      <LiteratureSearchConfigCard 
+        config={config.literatureSearch}
+        onConfigChange={handleLiteratureSearchChange}
+      />
     </div>
   );
 };
