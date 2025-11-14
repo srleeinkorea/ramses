@@ -1,5 +1,5 @@
 import React from 'react';
-import { Agent, AgentCategory, AgentType, MonitoringConfig, ChatbotConfig, ReportingConfig, VentilatorConfig, AgentConfig, KnowledgeSourceType, EMRIntegrationConfig, KnowledgeSource, MedicalLiteratureSearchConfig } from './types';
+import { Agent, AgentCategory, AgentType, MonitoringConfig, ChatbotConfig, ReportingConfig, VentilatorConfig, AgentConfig, KnowledgeSourceType, EMRIntegrationConfig, KnowledgeSource, MedicalLiteratureSearchConfig, BehavioralRule } from './types';
 
 // HeroIcons as React Components
 const ChartBarIcon: React.FC<{ className?: string }> = (props) => (
@@ -59,6 +59,13 @@ export const INITIAL_KNOWLEDGE_SOURCES: KnowledgeSource[] = [
     { id: 'kb-peds-resp-10', name: 'Nelson Textbook of Pediatrics - Respiratory System', type: KnowledgeSourceType.TEXTBOOK, description: '22nd Edition', enabled: true, isDeletable: true },
 ];
 
+const SAMPLE_CHATBOT_RULES: BehavioralRule[] = [
+    { id: 'rule-1', condition: '불안, 걱정, 무서워요', matchType: 'any', responses: ['괜찮으신가요? 많이 걱정되시겠어요. 제가 도울 수 있는 일이 있을까요?', '필요하시면 간호사 호출을 도와드릴 수 있습니다.'], escalation: 'none', tags: ['emotional_support', 'caregiver_anxiety'] },
+    { id: 'rule-2', condition: '숨쉬기 힘들어해요, 청색증, 의식이 없어요', matchType: 'any', responses: ['매우 위급한 상황일 수 있습니다. 즉시 119에 신고하고, 동시에 의료진에게 바로 알리겠습니다.'], escalation: 'nurse_alert', tags: ['urgent', 'respiratory_distress', 'emergency'] },
+    { id: 'rule-3', condition: '약, 부작용, 투약', matchType: 'any', responses: ['약물에 대한 질문이시군요. 일반적인 정보는 알려드릴 수 있지만, 가장 정확한 답변을 위해 담당 의사나 약사에게 전달해 드리겠습니다.', '잠시만 기다려주세요.'], escalation: 'doctor_review', tags: ['medication', 'adverse_event_query'] },
+    { id: 'rule-4', condition: '인공호흡기, 알람', matchType: 'all', responses: ['인공호흡기에서 알람이 울리나요? 화면에 표시되는 메시지가 있다면 알려주시겠어요?', '먼저, 아이의 호흡이 괜찮은지 확인해주세요. 연결 튜브가 빠지거나 꼬이지 않았는지도 확인 부탁드립니다.'], escalation: 'none', tags: ['ventilator', 'alarm', 'technical_issue'] },
+    { id: 'rule-5', condition: '모르겠어요, 무슨 말인지', matchType: 'any', responses: ['죄송합니다, 질문을 잘 이해하지 못했어요. 조금 더 쉽게 다른 방식으로 질문해주시겠어요?', '예를 들어, "아이가 열이 나요"와 같이 구체적으로 말씀해주시면 더 좋습니다.'], escalation: 'none', tags: ['clarification', 'nlu_fallback'] },
+];
 
 export const AGENT_TYPE_DETAILS: Record<AgentType, {
     label: string;
@@ -101,8 +108,8 @@ export const AGENT_TYPE_DETAILS: Record<AgentType, {
         icon: ChatBubbleLeftRightIcon,
         defaultConfig: {
             persona: 'empathetic',
-            knowledgeSourceIds: ['kb-1'],
-            rules: [],
+            knowledgeSourceIds: ['kb-1', 'kb-peds-resp-3', 'kb-peds-resp-5'],
+            rules: SAMPLE_CHATBOT_RULES,
             literatureSearch: { ...defaultLiteratureSearchConfig, enabled: true },
         } as ChatbotConfig,
         defaultDescription: '승인된 지식 소스를 기반으로 보호자의 질문에 답변합니다.',
@@ -160,13 +167,7 @@ export const INITIAL_AGENTS: Agent<any>[] = [
     config: {
       persona: 'empathetic',
       knowledgeSourceIds: ['kb-1', 'kb-2', 'kb-3'],
-      rules: [
-        { id: 'rule-1', condition: '불안, 걱정, 무서워요', matchType: 'any', responses: ['괜찮으신가요? 많이 걱정되시겠어요. 제가 도울 수 있는 일이 있을까요?', '필요하시면 간호사 호출을 도와드릴 수 있습니다.'], escalation: 'none', tags: ['emotional_support', 'caregiver_anxiety'] },
-        { id: 'rule-2', condition: '숨쉬기 힘들어해요, 청색증, 의식이 없어요', matchType: 'any', responses: ['매우 위급한 상황일 수 있습니다. 즉시 119에 신고하고, 동시에 의료진에게 바로 알리겠습니다.'], escalation: 'nurse_alert', tags: ['urgent', 'respiratory_distress', 'emergency'] },
-        { id: 'rule-3', condition: '약, 부작용, 투약', matchType: 'any', responses: ['약물에 대한 질문이시군요. 일반적인 정보는 알려드릴 수 있지만, 가장 정확한 답변을 위해 담당 의사나 약사에게 전달해 드리겠습니다.', '잠시만 기다려주세요.'], escalation: 'doctor_review', tags: ['medication', 'adverse_event_query'] },
-        { id: 'rule-4', condition: '인공호흡기, 알람', matchType: 'all', responses: ['인공호흡기에서 알람이 울리나요? 화면에 표시되는 메시지가 있다면 알려주시겠어요?', '먼저, 아이의 호흡이 괜찮은지 확인해주세요. 연결 튜브가 빠지거나 꼬이지 않았는지도 확인 부탁드립니다.'], escalation: 'none', tags: ['ventilator', 'alarm', 'technical_issue'] },
-        { id: 'rule-5', condition: '모르겠어요, 무슨 말인지', matchType: 'any', responses: ['죄송합니다, 질문을 잘 이해하지 못했어요. 조금 더 쉽게 다른 방식으로 질문해주시겠어요?', '예를 들어, "아이가 열이 나요"와 같이 구체적으로 말씀해주시면 더 좋습니다.'], escalation: 'none', tags: ['clarification', 'nlu_fallback'] },
-      ],
+      rules: SAMPLE_CHATBOT_RULES,
       literatureSearch: {
           enabled: true,
           databases: {
